@@ -51,6 +51,15 @@ UserSchema.methods.generateAuthToken = function () {
   });
 };
 
+UserSchema.methods.removeToken = function (token) {
+  var user = this;
+  return user.update({
+    $pull: {
+      tokens: {token}
+    }
+  });
+};
+
 UserSchema.statics.findByToken = function (token) {
   var User = this;
   var decoded;
@@ -72,7 +81,6 @@ UserSchema.statics.findByCredentials = function (email, password) {
   return User.findOne({email}).then((user)=>{
     //If user doesn't exist
     if(!user){
-      console.log('rejected');
       return Promise.reject();
     }
     return new Promise((resolve, reject)=>{
