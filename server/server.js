@@ -2,6 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const _ = require('lodash');
 const {ObjectId} = require('mongodb');
+const bcrypt = require('bcryptjs');
 
 var {mongoose} = require('./db/mongoose');
 var {Todo} = require('./models/todo');
@@ -63,6 +64,7 @@ app.delete('/todos/:id',(req, res)=>{
   });
 });
 
+//Update todo
 app.patch('/todos/:id',(req, res)=>{
   var id = req.params.id;
   var body = _.pick(req.body,['text','completed']);
@@ -83,12 +85,13 @@ app.patch('/todos/:id',(req, res)=>{
       return res.status(404).send();
     }
     res.send({todo});
-  }).catch((e)=>{
+  }).catch((e) => {
     res.status(400).send();
   });
 
 });
 
+//Add user
 app.post('/users', (req, res)=>{
   var body = _.pick(req.body,['email','password']);
   var user = new User(body);
@@ -118,6 +121,29 @@ app.get('/users',(req,res)=>{
 app.get('/users/me', authenticate, (req, res) => {
   res.send(req.user);
 });
+
+app.post('/users/login', (req, res) => {
+  var body = _.pick(req.body,['email','password']);
+  var user = new User(body);
+
+  User.findByCredentials(body.email, body.password).then((user)=>{
+
+    return user.generateAuthToken().then((token)=>{
+      res.header('x-auth', token).send(user);
+    });
+  }).catch((e)=>{
+    res.status(400).send();
+  });
+
+
+}, (e) => {
+  res.status(400).send(e);
+});
+
+
+//bcrypt.compare(user.password, hashedPassword,(err,res)=>{});
+
+// });
 
 app.listen(port, ()=>{
   console.log(`Started at port ${port}`);
